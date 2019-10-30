@@ -6,13 +6,14 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_CHECK_CXX
   "/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp" "/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.o"
   "/home/vilius/Desktop/LP_Lab_2/src/main.cpp" "/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.o"
-  "/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp" "/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.o"
   "/home/vilius/Desktop/LP_Lab_2/src/person.cpp" "/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
+  "/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi"
+  "/usr/lib/x86_64-linux-gnu/openmpi/include"
   "../include"
   "../include/nlohmann"
   "../include/sha512"

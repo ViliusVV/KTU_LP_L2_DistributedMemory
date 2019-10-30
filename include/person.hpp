@@ -12,12 +12,16 @@ class Person
         double Balance;
         std::string HahsValue;
 
-        void Person::Clone(Person person);
-        std::string Person::InfoHeader();
-        bool isNull();
-
         Person::Person();
         Person::Person(std::string name,int streetnum, double balance);
+        Person::Person(std::string name,int streetnum, double balance, std::string hash);
+
+        void Person::Clone(Person person);
+        std::string Serialize();
+        Person Deserialize(std::string jsn);
+        bool isNull();
+
+        std::string Person::InfoHeader();
         
 
         friend std::ostream& operator<<(std::ostream& os, const Person& person);

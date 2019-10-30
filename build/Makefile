@@ -177,33 +177,6 @@ home/vilius/Desktop/LP_Lab_2/src/main.cpp.s:
 	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.s
 .PHONY : home/vilius/Desktop/LP_Lab_2/src/main.cpp.s
 
-home/vilius/Desktop/LP_Lab_2/src/monitor.o: home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.o
-
-.PHONY : home/vilius/Desktop/LP_Lab_2/src/monitor.o
-
-# target to build an object file
-home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.o:
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.o
-.PHONY : home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.o
-
-home/vilius/Desktop/LP_Lab_2/src/monitor.i: home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.i
-
-.PHONY : home/vilius/Desktop/LP_Lab_2/src/monitor.i
-
-# target to preprocess a source file
-home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.i:
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.i
-.PHONY : home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.i
-
-home/vilius/Desktop/LP_Lab_2/src/monitor.s: home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.s
-
-.PHONY : home/vilius/Desktop/LP_Lab_2/src/monitor.s
-
-# target to generate assembly for a file
-home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.s:
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.s
-.PHONY : home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.s
-
 home/vilius/Desktop/LP_Lab_2/src/person.o: home/vilius/Desktop/LP_Lab_2/src/person.cpp.o
 
 .PHONY : home/vilius/Desktop/LP_Lab_2/src/person.o
@@ -246,9 +219,6 @@ help:
 	@echo "... home/vilius/Desktop/LP_Lab_2/src/main.o"
 	@echo "... home/vilius/Desktop/LP_Lab_2/src/main.i"
 	@echo "... home/vilius/Desktop/LP_Lab_2/src/main.s"
-	@echo "... home/vilius/Desktop/LP_Lab_2/src/monitor.o"
-	@echo "... home/vilius/Desktop/LP_Lab_2/src/monitor.i"
-	@echo "... home/vilius/Desktop/LP_Lab_2/src/monitor.s"
 	@echo "... home/vilius/Desktop/LP_Lab_2/src/person.o"
 	@echo "... home/vilius/Desktop/LP_Lab_2/src/person.i"
 	@echo "... home/vilius/Desktop/LP_Lab_2/src/person.s"

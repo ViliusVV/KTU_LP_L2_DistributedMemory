@@ -60,60 +60,46 @@ include CMakeFiles/main.dir/flags.make
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.o: CMakeFiles/main.dir/flags.make
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.o: /home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.o -c /home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp
+	mpicxx  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.o -c /home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp
 
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp > CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.i
+	mpicxx $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp > CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.i
 
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.s
+	mpicxx $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.s
 
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.o: CMakeFiles/main.dir/flags.make
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.o: /home/vilius/Desktop/LP_Lab_2/src/main.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.o -c /home/vilius/Desktop/LP_Lab_2/src/main.cpp
+	mpicxx  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.o -c /home/vilius/Desktop/LP_Lab_2/src/main.cpp
 
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/vilius/Desktop/LP_Lab_2/src/main.cpp > CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.i
+	mpicxx $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/vilius/Desktop/LP_Lab_2/src/main.cpp > CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.i
 
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/vilius/Desktop/LP_Lab_2/src/main.cpp -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.s
-
-CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.o: CMakeFiles/main.dir/flags.make
-CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.o: /home/vilius/Desktop/LP_Lab_2/src/monitor.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.o -c /home/vilius/Desktop/LP_Lab_2/src/monitor.cpp
-
-CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/vilius/Desktop/LP_Lab_2/src/monitor.cpp > CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.i
-
-CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/vilius/Desktop/LP_Lab_2/src/monitor.cpp -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.s
+	mpicxx $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/vilius/Desktop/LP_Lab_2/src/main.cpp -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.s
 
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.o: CMakeFiles/main.dir/flags.make
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.o: /home/vilius/Desktop/LP_Lab_2/src/person.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.o -c /home/vilius/Desktop/LP_Lab_2/src/person.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.o"
+	mpicxx  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.o -c /home/vilius/Desktop/LP_Lab_2/src/person.cpp
 
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/vilius/Desktop/LP_Lab_2/src/person.cpp > CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.i
+	mpicxx $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/vilius/Desktop/LP_Lab_2/src/person.cpp > CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.i
 
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/vilius/Desktop/LP_Lab_2/src/person.cpp -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.s
+	mpicxx $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/vilius/Desktop/LP_Lab_2/src/person.cpp -o CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.s
 
 # Object files for target main
 main_OBJECTS = \
 "CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.o" \
 "CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.o" \
-"CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.o" \
 "CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.o"
 
 # External object files for target main
@@ -121,11 +107,10 @@ main_EXTERNAL_OBJECTS =
 
 /home/vilius/Desktop/LP_Lab_2/bin/main: CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.o
 /home/vilius/Desktop/LP_Lab_2/bin/main: CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.o
-/home/vilius/Desktop/LP_Lab_2/bin/main: CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/monitor.cpp.o
 /home/vilius/Desktop/LP_Lab_2/bin/main: CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/person.cpp.o
 /home/vilius/Desktop/LP_Lab_2/bin/main: CMakeFiles/main.dir/build.make
 /home/vilius/Desktop/LP_Lab_2/bin/main: CMakeFiles/main.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable /home/vilius/Desktop/LP_Lab_2/bin/main"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable /home/vilius/Desktop/LP_Lab_2/bin/main"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/main.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

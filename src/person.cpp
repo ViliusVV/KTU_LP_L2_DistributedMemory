@@ -1,13 +1,19 @@
 #include "person.hpp"
 #include <stdio.h>
 #include <string.h>
+#include <nlohmann/json.hpp>
 
+using json = nlohmann::json;
+
+
+// Constructors
 Person::Person(){
     Name = "";
     StreetNum = 0;
     Balance = 0.0;
     HahsValue = "";
 }
+
 
 Person::Person(std::string name,int streetnum, double balance)
 {
@@ -17,11 +23,46 @@ Person::Person(std::string name,int streetnum, double balance)
   HahsValue = "";
 }
 
+
+Person::Person(std::string name,int streetnum, double balance, std::string hash)
+{
+  Name = name;
+  StreetNum = streetnum;
+  Balance = balance;
+  HahsValue = hash;
+}
+
+
+// Serializes this object to json
+std::string Person::Serialize()
+{
+  json jsn;
+
+  jsn["Name"] = Name;
+  jsn["StreetNum"] = StreetNum;
+  jsn["Balance"] = Balance;
+  jsn["HashValue"] = HahsValue;
+
+  return jsn.dump();
+}
+
+
+// Deserializes object form json 
+Person Deserialize(std::string jsn)
+{
+  json ds = json::parse(jsn);
+  return Person(ds["Name"], ds["StreetNum"].get<int>(), ds["Balance"].get<double>(), ds["HashValue"]);
+}
+
+
+// Check if object is "empty"
 bool Person::isNull()
 {
     return Name == "";
 }
 
+
+// Clones person object by value
 void Person::Clone(Person person)
 {
   Name = person.Name;
@@ -30,6 +71,8 @@ void Person::Clone(Person person)
   HahsValue = person.HahsValue;
 }
 
+
+// Table header for pretty printing
 std::string Person::InfoHeader()
 {
     char buff[512];
@@ -39,6 +82,8 @@ std::string Person::InfoHeader()
     return strBuff ;
 }
 
+
+// Output stream operator overload
 std::ostream& operator<<(std::ostream& os, const Person& person)
 {
     char buff[512];

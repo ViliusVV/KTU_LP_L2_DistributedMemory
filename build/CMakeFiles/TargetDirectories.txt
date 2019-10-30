@@ -1,0 +1,3 @@
+/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles/rebuild_cache.dir
+/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles/main.dir
+/home/vilius/Desktop/LP_Lab_2/build/CMakeFiles/edit_cache.dir

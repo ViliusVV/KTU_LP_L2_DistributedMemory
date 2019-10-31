@@ -15,7 +15,7 @@ class Person
         Person::Person();
         Person::Person(std::string name,int streetnum, double balance);
         Person::Person(std::string name,int streetnum, double balance, std::string hash);
-
+        Person::Person(std::string jsonStr);
         void Person::Clone(Person person);
         std::string Serialize();
         Person Deserialize(std::string jsn);

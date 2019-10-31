@@ -374,16 +374,6 @@ sha512.h
 person.hpp
 /home/vilius/Desktop/LP_Lab_2/src/person.hpp
 
-/home/vilius/Desktop/LP_Lab_2/src/person.cpp
-person.hpp
-/home/vilius/Desktop/LP_Lab_2/src/person.hpp
-stdio.h
--
-string.h
--
-nlohmann/json.hpp
--
-
 /lib/x86_64-linux-gnu/openmpi/include/mpi.h
 stddef.h
 -

@@ -32,6 +32,12 @@ Person::Person(std::string name,int streetnum, double balance, std::string hash)
   HahsValue = hash;
 }
 
+Person::Person(std::string jsonStr)
+{
+  Person tmp = Deserialize(jsonStr);
+  Clone(tmp);
+}
+
 
 // Serializes this object to json
 std::string Person::Serialize()
@@ -48,7 +54,7 @@ std::string Person::Serialize()
 
 
 // Deserializes object form json 
-Person Deserialize(std::string jsn)
+Person Person::Deserialize(std::string jsn)
 {
   json ds = json::parse(jsn);
   return Person(ds["Name"], ds["StreetNum"].get<int>(), ds["Balance"].get<double>(), ds["HashValue"]);
@@ -75,8 +81,8 @@ void Person::Clone(Person person)
 // Table header for pretty printing
 std::string Person::InfoHeader()
 {
-    char buff[512];
-    snprintf(buff,512, "| %-20s | %-13s | %-10s | %-128s |\n", "Name", "Street Number", "Balance", "SHA-512 Hash");
+    char buff[1024];
+    snprintf(buff,1024, "\n| %-20s | %-13s | %-10s | %-128s |\n", "Name", "Street Number", "Balance", "SHA-512 Hash");
     std::string strBuff(buff);
     strBuff = strBuff + std::string(strlen(buff), '-') + "\n";
     return strBuff ;

@@ -14,9 +14,10 @@
             "dependsOn":[
                 "cmake"
             ],
-            "problemMatcher": [
-                "$gcc"
-            ],
+            "problemMatcher": {
+                "base": "$gcc",
+                "fileLocation": ["absolute"]
+            },
             "group": "build"
         },
         {
@@ -30,9 +31,10 @@
                 "cwd": "${workspaceFolder}/build"
             },
             "group": "build",
-            "problemMatcher": [
-                "$gcc"
-            ]
+            "problemMatcher": {
+                "base": "$gcc",
+                "fileLocation": ["absolute"]
+            }
         }
     ]
 }

@@ -4,7 +4,6 @@
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.o: /home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.cpp.o: /home/vilius/Desktop/LP_Lab_2/include/sha512/sha512.h
 
-CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.o: ../include/debug.hpp
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.o: ../include/nlohmann/json.hpp
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.o: ../include/person.hpp
 CMakeFiles/main.dir/home/vilius/Desktop/LP_Lab_2/src/main.cpp.o: ../include/sha512/sha512.h

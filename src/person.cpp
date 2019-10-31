@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <nlohmann/json.hpp>
+#include <iostream>
 
 using json = nlohmann::json;
 

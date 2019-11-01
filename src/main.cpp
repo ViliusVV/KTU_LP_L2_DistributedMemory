@@ -21,7 +21,6 @@
 #define ENTRY_CNT_MAX 250
 #define DATA_BUFFER 16
 
-
 #define JSON_DATA_FILE "data/IFF7-4_ValinskisV_L1_dat_1.json"
 
 // Alias
@@ -32,22 +31,24 @@ enum TagEnum
 {
     dataTag = 0,
     workTag,
+    workStatus,
     statusTag,
     pCountTag
 };
 
 // Custom status enumerator to eliminate need of diferent tags for each flag
-enum StatusEnum {
-  clear         = 0x00, // 0000 0000
-  isEmpty       = 0x01, // 0000 0001
-  isFull        = 0x02, // 0000 0010
-  ready         = 0x04, // 0000 0100
-  makeItStop    = 0x08, // 0000 1000
-  arm           = 0x10, // 0001 0000
-  dd            = 0x20, // 0010 0000
-  placeHolder2  = 0x40, // 0100 0000
-  placeHolder3  = 0x80  // 1000 0000
-};  
+enum StatusEnum
+{
+    clear = 0x00,        // 0000 0000
+    isEmpty = 0x01,      // 0000 0001
+    isFull = 0x02,       // 0000 0010
+    ready = 0x04,        // 0000 0100
+    makeItStop = 0x08,   // 0000 1000
+    arm = 0x10,          // 0001 0000
+    dd = 0x20,           // 0010 0000
+    placeHolder2 = 0x40, // 0100 0000
+    placeHolder3 = 0x80  // 1000 0000
+};
 
 // Function prototypes
 int deserializeJsonFile(std::string fileName, Person arr[]);
@@ -94,32 +95,41 @@ int main()
             MPI_Abort(MPI_COMM_WORLD, 1); //
         }
 
-        logger("test_point  process started!", 1);
+
+        // Synchronously start other threads
+        for(int i = 1; i < mpi_size; i++)
+        {
+            MPI_sendStatus(ready, i);
+        }
+        logger("Root process started!", 1);
         MPI_rootProcess();
         break;
     // =================================================================
     case DATA_PROCESS:
+        MPI_recvStatus(ROOT_PROCESS);
         logger("Data process started!", 1);
         MPI_dataProcess();
         break;
     // =================================================================
     case RESULT_PROCESS:
+        MPI_recvStatus(ROOT_PROCESS);
         logger("Result process started!", 1);
         MPI_resultProcess();
         break;
     // =================================================================
     default:
+        MPI_recvStatus(ROOT_PROCESS);
         logger("Worker process started!", 1);
         MPI_workerProcess();
         break;
         // =================================================================
     }
+    logger("Finalize", 2);
     // End MPI segment
     MPI::Finalize();
 
     return 0;
 }
-
 
 // ===============================================================
 // ===================== PROCESS FUNCTIONS =======================
@@ -131,54 +141,32 @@ void MPI_rootProcess()
     // Local array to store people
     Person people[ENTRY_CNT_MAX];
     int peopleCount = deserializeJsonFile(JSON_DATA_FILE, people);
+    Person processedPeople[ENTRY_CNT_MAX];
+    int pPeopleCount = deserializeJsonFile(JSON_DATA_FILE, people);
 
     // Hold our current status
     StatusEnum dataStatus = clear;
     StatusEnum rootStatus = clear;
     MPI_Status mpiStatus;
 
-    MPI::COMM_WORLD.Ssend(&peopleCount, 1, MPI::INT, RESULT_PROCESS, pCountTag);
-    //MPI_sendStatus(rootStatus,DATA_PROCESS);
-
-    for(int p = 0; p < peopleCount; p++)
-    {
-        logger("test_point 01", 5);
+    for (int p = 0; p < peopleCount; p++)
+    {   // Block until root recieves status message from data thread
+        logger("Root waiting for status...", 5);
         dataStatus = MPI_recvStatus(DATA_PROCESS);
 
-        // Send person if data process is not full
-        if(!(dataStatus & isFull))
-        {
-            logger("test_point 02", 5);
-            MPI_sendPerson(people[p], DATA_PROCESS);
-            logger("test_point 03", 5);
-        }
-        // Send when data proces becomes not full
-        else
-        {
-            logger("Data process is full.", 0);
-            dataStatus = MPI_recvStatus(DATA_PROCESS); 
-            logger("test_point 04", 5);
-            while(dataStatus & isFull)
-            {
-                dataStatus = MPI_recvStatus(DATA_PROCESS);
-            }
-            logger("test_point 05", 5);
-            // Send imideatly after data process becomes empty
-            MPI_sendPerson(people[p], DATA_PROCESS);
-            logger("test_point 06", 5);
-        }  
+        logger("Root sending person", 5);
+        MPI_sendPerson(people[p], DATA_PROCESS);
     }
-    logger("test_point 07", 5);
+    logger("All people sent by root", 4);
+
     // Discart last status message from data process, to unblock
-    // MPI_recvStatus(DATA_PROCESS);
-    
-    MPI::COMM_WORLD.Irecv(&dataStatus, 1, MPI::INT, DATA_PROCESS, statusTag);
+    MPI::COMM_WORLD.Recv(&dataStatus, 1, MPI::INT, DATA_PROCESS, statusTag);
+
     rootStatus = makeItStop;
-    logger("test_point 08", 5);
-    MPI_sendStatus(rootStatus, DATA_PROCESS);
+    logger("Sending halt...", 5);
+    MPI::COMM_WORLD.Ssend(&rootStatus, 1, MPI::INT, DATA_PROCESS, statusTag);
     logger("Rooot process sent halt signal to data process", 0);
 }
-
 
 // Function to call procedures specific to data process. It reads data and
 // distributes to worker procceses
@@ -195,45 +183,67 @@ void MPI_dataProcess()
     MPI::Status mpiStatus;
     bool finished = false;
     bool haltFlag = false;
+    bool canRecieve = true;
 
     // Do until it has work
-    while(true)
+    while (true)
     {
+        // Get current state of array
         status = fillStatusFlags(peopleCount, DATA_BUFFER);
-        logger("Current status byte: " + statusToStr(status), 4);
+        //logger("Current status byte: " + statusToStr(status), 5);
 
-        if(!(rootStatus & makeItStop || peopleCount == DATA_BUFFER)) MPI_sendStatus(status, ROOT_PROCESS);
-        logger("test_point 12", 5);
-
-        // Find out which proces wants to send message of some type
-        MPI::COMM_WORLD.Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, mpiStatus);
-        logger("Data process probe -  process: " + std::to_string(mpiStatus.Get_source()) + " tag: " + std::to_string(mpiStatus.Get_tag()), 4);
-        
-        bool flg = MPI::COMM_WORLD.Iprobe(ROOT_PROCESS, statusTag); 
-        if(flg) 
+        // Send notification for root that we can recieve data
+        if(canRecieve && peopleCount < DATA_BUFFER - 1 )
         {
-            haltFlag = true;
-            //rootStatus = MPI_recvStatus(ROOT_PROCESS);
+            logger("Sending status to ROOT",3);
+            MPI_sendStatus(status, ROOT_PROCESS);
         }
-
-        std::cout << "I count" << peopleCount << " max "  << DATA_BUFFER << std::endl;
-
-        // When message is from root
-        if(mpiStatus.Get_source() == ROOT_PROCESS)
+        // Find out which proces wants to send message of some type
+        bool flag = MPI::COMM_WORLD.Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, mpiStatus);
+        while (!flag)
         {
-            logger("test_point 1", 5);
-            // Check if root process sent signal
-            if(mpiStatus.Get_tag() == statusTag)
-            {
-                logger("test_point 2", 5);
-                // Recieve message to unblock
-                rootStatus = MPI_recvStatus(ROOT_PROCESS);
-                logger("Recieved halt signal form root", 2);
-            }
+            flag = MPI::COMM_WORLD.Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, mpiStatus);
+        }
+        
+        logger("Data process probe -  process: " + std::to_string(mpiStatus.Get_source()) + " tag: " + std::to_string(mpiStatus.Get_tag()), 3);
+        logger("Element count: "  + std::to_string(peopleCount), 3);
 
-            if(mpiStatus.Get_tag() == dataTag)
+
+        // Check if root send halt signal
+        bool flg = MPI::COMM_WORLD.Iprobe(ROOT_PROCESS, statusTag);
+        if (flg)
+        {
+            logger("Root send halt, reciving it...", 1);
+            rootStatus = MPI_recvStatus(ROOT_PROCESS);
+            haltFlag = true;
+            canRecieve = false;
+            logger("Halt recivied...", 1);
+        }
+        
+        // If array is empty we need to wait for root
+        if (peopleCount == 0 && !haltFlag)
+        {   
+            logger("Empty array, waiting root to append...", 1);
+            bool flg = MPI::COMM_WORLD.Iprobe(ROOT_PROCESS, statusTag);
+            if (flg)
             {
-                logger("test_point 3", 5);
+                logger("Root send halt, reciving it...", 1);
+                rootStatus = MPI_recvStatus(ROOT_PROCESS);
+                haltFlag = true;
+                canRecieve = false;
+                logger("Halt recivied...", 1);
+                break;
+            }
+            people[peopleCount++] = MPI_recvPerson(ROOT_PROCESS);
+            continue;
+        }
+        // When message is from root
+        else if (mpiStatus.Get_source() == ROOT_PROCESS)
+        {
+            logger("Message is from root", 5);
+            if (mpiStatus.Get_tag() == dataTag && peopleCount != DATA_BUFFER)
+            {
+                logger("Sending person", 5);
                 Person tmp = MPI_recvPerson(ROOT_PROCESS);
                 people[peopleCount++] = tmp;
             }
@@ -241,54 +251,22 @@ void MPI_dataProcess()
         // When message is from worker
         else
         {
-            logger("test_point 4", 5);
-            if(rootStatus & makeItStop && peopleCount == 0)
+            logger("Message is from worker", 5);
+            if (haltFlag && peopleCount == 0)
             {
-                logger("test_point 5", 5);
-                MPI_bcastStatusWorker(makeItStop);
                 break;
             }
-            if(peopleCount > 0)
-            {
-                logger("test_point 6", 5);
-                workerStatus = MPI_recvStatus(mpiStatus.Get_source());
-                MPI_sendPerson(people[--peopleCount], mpiStatus.Get_source()); 
-            }
-            if(peopleCount == 0)
-            {
-                logger("Worker process trying to acces empty array, waiting root to append...", 1);
 
-                // check if root proccess sent us halt signal
-                logger("test_point 61", 5);
-                logger("test_point 62", 5);
-                logger("haltflg " + std::to_string(haltFlag), 5);
-
-                if(haltFlag)
-                {
-                    logger("test_point 63", 5);
-                    MPI::COMM_WORLD.Irecv(&rootStatus, 1, MPI::INT, ROOT_PROCESS, statusTag);
-                    logger("Root cant append, because it sent halt signal", 1);
-                    MPI_bcastStatusWorker(rootStatus);
-                    logger("test_point 64", 5);
-                    break;
-                }
-
-                logger("haltflg " + std::to_string(haltFlag), 5);
-                people[peopleCount++] = MPI_recvPerson(ROOT_PROCESS);
-                logger("test_point 7", 5);
-
-                workerStatus = MPI_recvStatus(mpiStatus.Get_source());
-                logger("test_point 8", 5);
-                
-                MPI_sendPerson(people[--peopleCount], mpiStatus.Get_source());
-                logger("test_point 9", 5);
-                
-            }
+            logger("Getting ready worker", 5);
+            workerStatus = MPI_recvStatus(mpiStatus.Get_source());
+            MPI_sendPerson(people[--peopleCount], mpiStatus.Get_source());
+            logger("Sent data to worker", 5);
         }
-
-        logger("test_point 55", 5);
     }
-
+    // Notify workers to stop
+    logger("Halt broadcast", 1);
+    MPI_bcastStatusWorker(makeItStop);
+    logger("Halt broadcast done", 1);
 }
 
 
@@ -301,32 +279,38 @@ void MPI_workerProcess()
     StatusEnum dataStatus = clear;
     MPI::Status mpiStatus;
     Person tmpPerson;
+    int count = 0;
 
-    while(!(dataStatus & makeItStop))
+    while (true)
     {
         MPI_sendStatus(workerStatus, DATA_PROCESS);
         logger("Ready!", 2);
         MPI::COMM_WORLD.Probe(DATA_PROCESS, MPI_ANY_TAG, mpiStatus);
-        logger("Worker probe -  process: " + std::to_string(mpiStatus.Get_source()) + " tag: " + std::to_string(mpiStatus.Get_tag()), 4);
+        logger("Message probe, process: " + std::to_string(mpiStatus.Get_source()) + ", tag: " + std::to_string(mpiStatus.Get_tag()), 4);
 
-        if(mpiStatus.Get_tag() == dataTag)
+        if (mpiStatus.Get_tag() == dataTag)
         {
-            logger("test_point 10",5);
+            logger("Trying to recieve person...", 5);
             tmpPerson = MPI_recvPerson(DATA_PROCESS);
-            logger("Worker recieved person : " + tmpPerson.Name, 3);
             tmpPerson.HahsValue = sha512Function(tmpPerson);
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            count++;
         }
-        if(mpiStatus.Get_tag() == statusTag)
+        else if (mpiStatus.Get_tag() == statusTag)
         {
-            logger("test_point 11", 5);
+            logger("Trying to recieve status", 5);
             dataStatus = MPI_recvStatus(DATA_PROCESS);
+            logger("Worker recieved halt signal from data process", 2);
             break;
-        }   
+        }
     }
+    // Notify resutl process about halt
+    logger("Notifying result process about halt", 3);
+    workerStatus = makeItStop;
+    MPI::COMM_WORLD.Ssend(&workerStatus, 1, MPI::INT, RESULT_PROCESS, workStatus);
 
-    logger("Worker recieved halt signal from data process", 1);
+    logger("Worker halted, total processed:" + std::to_string(count), 0);
 }
-
 
 // Function to call procedures specifijc to result process.It waits for worker processes
 // to send their finished work and puts into result data structure
@@ -334,11 +318,40 @@ void MPI_resultProcess()
 {
     Person *outPeople = new Person[ENTRY_CNT_MAX]();
     int peopleCount = 0;
-    int recievedCount;
 
-    MPI::COMM_WORLD.Recv(&recievedCount,1,MPI::INT, ROOT_PROCESS, pCountTag);
+    MPI::Status mpiStatus;
+    StatusEnum workerStatus;
+    int halts = 0;
+    int maxHalts = MPI::COMM_WORLD.Get_size()-3;
+    
+    // Do until all workers have halted
+    while(true)
+    {
+        logger("Waiting for delivered work or status", 2);
+        MPI::COMM_WORLD.Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, mpiStatus);
 
-    logger("Result process recieved people count: " + std::to_string(recievedCount), 1);
+        if(mpiStatus.Get_tag() == workTag)
+        {
+            logger("Recieved work", 2);
+        } 
+        // Recieved halt
+        else if (mpiStatus.Get_tag()  == workStatus)
+        {
+            logger("Recieving halt..", 2);
+            MPI::COMM_WORLD.Recv(&workerStatus, 1, MPI::INT, mpiStatus.Get_source(), workStatus);
+            logger("Recieved halt!!", 2);
+            halts++;
+        }
+
+        // All worker processes stoped, we should as well
+        if(halts == maxHalts)
+        {
+            break;
+        }
+    }
+
+
+    logger("Result process recieved people count: " + std::to_string(peopleCount), 1);
 
     // std::cout << "Total count:" << peopleCount << std::endl;
 
@@ -346,7 +359,6 @@ void MPI_resultProcess()
     // std::cout << "Serialized JSON: " << jsonStr << std::endl;
     // Person tmp(jsonStr);
     // std::cout << "Desiarilzed JSON: " << tmp << std::endl;
-    
 }
 
 // ===============================================================
@@ -378,7 +390,6 @@ int deserializeJsonFile(std::string fileName, Person arr[])
     return count;
 }
 
-
 // Saves people data structure to text file
 void saveToFile(std::string fileName, Person outArr[], int outCnt)
 {
@@ -390,12 +401,11 @@ void saveToFile(std::string fileName, Person outArr[], int outCnt)
     }
 
     ofs.close();
-}  
+}
 
 // ===============================================================
 // ========================== MISC FUNCTIONS =====================
 // ===============================================================
-
 
 // Sends to all worker processes
 void MPI_bcastStatusWorker(StatusEnum status)
@@ -404,15 +414,15 @@ void MPI_bcastStatusWorker(StatusEnum status)
     logger("Halt probe 1", 5);
     bool incommigMsg = MPI::COMM_WORLD.Iprobe(MPI_ANY_SOURCE, statusTag);
     int tmp;
-    
-    while(incommigMsg)
+
+    while (incommigMsg)
     {
         logger("Halt probe 2", 5);
         MPI::COMM_WORLD.Irecv(&tmp, 1, MPI::INT, MPI_ANY_SOURCE, statusTag);
         incommigMsg = MPI::COMM_WORLD.Iprobe(MPI_ANY_SOURCE, statusTag);
     }
     // Now send notification
-    for(int i = 3; i < MPI::COMM_WORLD.Get_size(); i++)
+    for (int i = 3; i < MPI::COMM_WORLD.Get_size(); i++)
     {
         logger("Sending halt to process" + std::to_string(i), 2);
         MPI_sendStatus(status, i);
@@ -423,11 +433,10 @@ void MPI_bcastStatusWorker(StatusEnum status)
 void MPI_sendPerson(Person person, int destination)
 {
     std::string serializedPerson = person.Serialize();
-    const char* cStrJson = serializedPerson.c_str(); // Convert to C like litteral string
-    MPI::COMM_WORLD.Send(cStrJson, strlen(cStrJson)+1, MPI::CHAR, destination, dataTag);
+    const char *cStrJson = serializedPerson.c_str(); // Convert to C like litteral string
+    MPI::COMM_WORLD.Send(cStrJson, strlen(cStrJson) + 1, MPI::CHAR, destination, dataTag);
     logger("Sent person: " + person.Name, 1);
 }
-
 
 // Recieves char arrray and converts to person object via MPI message
 Person MPI_recvPerson(int source)
@@ -439,9 +448,7 @@ Person MPI_recvPerson(int source)
     Person tmp(jsonStr);
     logger("Recived person: " + tmp.Name, 1);
     return tmp;
-
 }
-
 
 // Send status byte
 void MPI_sendStatus(StatusEnum status, int destination)
@@ -449,10 +456,9 @@ void MPI_sendStatus(StatusEnum status, int destination)
     MPI::COMM_WORLD.Send(&status, 1, MPI::INT, destination, statusTag);
     std::bitset<8> bits(status);
     std::ostringstream ss;
-    ss <<  "Sent status byte: " << bits;
-    logger(ss.str(), 3);
+    ss << "Sent status byte: " << bits;
+    logger(ss.str(), 5);
 }
-
 
 // Recieves status byte
 StatusEnum MPI_recvStatus(int source)
@@ -461,8 +467,8 @@ StatusEnum MPI_recvStatus(int source)
     MPI::COMM_WORLD.Recv(&status, 1, MPI::INT, source, statusTag);
     std::bitset<8> bits(status);
     std::ostringstream ss;
-    ss <<  "Recieved status byte: " << bits;
-    logger(ss.str(), 3);
+    ss << "Recieved status byte: " << bits;
+    logger(ss.str(), 5);
     return status;
 }
 
@@ -470,7 +476,7 @@ std::string statusToStr(StatusEnum status)
 {
     std::bitset<8> bits(status);
     std::ostringstream ss;
-    ss  << bits;
+    ss << bits;
     return ss.str();
 }
 // Returns status with isEmpty and isFull set flags depending on arguments
@@ -479,12 +485,12 @@ StatusEnum fillStatusFlags(int count, int maxCount)
     StatusEnum status;
 
     // Is full
-    if(count == maxCount) 
+    if (count == maxCount)
     {
         status = isFull;
     }
     // Is empty
-    else if(count == 0)
+    else if (count == 0)
     {
         status = isEmpty;
     }
@@ -500,7 +506,7 @@ StatusEnum fillStatusFlags(int count, int maxCount)
 // Time heavy function which emulates in intensive task
 std::string sha512Function(Person p)
 {
-    int iterationCount = 2; // Hom many times to has
+    int iterationCount = 1; // Hom many times to has
     std::string output = sha512(p.Name + std::to_string(p.StreetNum) + std::to_string(p.Balance));
     for (int i = 0; i < iterationCount; i++)
     {
@@ -528,7 +534,6 @@ int saveResToVec(Person outPeople[], Person person)
     return (++extCount);
 }
 
-
 // Get duration in second to show how long program is running
 double programTime()
 {
@@ -538,25 +543,25 @@ double programTime()
 
 void logger(std::string ss, int level)
 {
-    #ifdef LOG
-    if(level <= LOG_LEVEL)
+#ifdef LOG
+    if (level <= LOG_LEVEL)
     {
         char buff[512];
         // snprintf(buff,512, "[Line:%-3d][Func:%10s] [%.3f][ProcID:%-1d] %s",
-        //                     __LINE__, 
+        //                     __LINE__,
         //                     __FUNCTION__,
         //                     programTime(),
         //                     MPI::COMM_WORLD.Get_rank(),
         //                     ss.c_str());
 
-        snprintf(buff,512, "[%.3f][ProcID:%-1d] %s",
-                            programTime(),
-                            MPI::COMM_WORLD.Get_rank(),
-                            ss.c_str());
+        snprintf(buff, 512, "\033[0;33m[%.3f]\033[0;31m[ProcID: -%-1d-] \033[0;32m%s \033[0m",
+                 programTime(),
+                 MPI::COMM_WORLD.Get_rank(),
+                 ss.c_str());
 
         std::string strBuff(buff);
         std::cout << strBuff << std::endl;
     }
-    #else
-    #endif
+#else
+#endif
 }

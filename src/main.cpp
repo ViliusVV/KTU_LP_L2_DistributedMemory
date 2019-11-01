@@ -19,9 +19,10 @@
 #define DATA_PROCESS 1
 #define RESULT_PROCESS 2
 #define ENTRY_CNT_MAX 250
-#define DATA_BUFFER 16
+#define DATA_BUFFER 8
 
 #define JSON_DATA_FILE "data/IFF7-4_ValinskisV_L1_dat_1.json"
+#define RESULT_FILE_NAME "data/IFF7-4_ValinskisV_2_res.txt"
 
 // Alias
 using json = nlohmann::json;
@@ -52,7 +53,7 @@ enum StatusEnum
 
 // Function prototypes
 int deserializeJsonFile(std::string fileName, Person arr[]);
-void saveToFile(Person outArr[], int outCnt);
+void saveToFile(std::string fileName, Person outArr[], int outCnt);
 
 StatusEnum fillStatusFlags(int count, int maxCount);
 std::string sha512Function(Person p);
@@ -63,8 +64,12 @@ std::string statusToStr(StatusEnum status);
 void MPI_sendPerson(Person person, int destination);
 Person MPI_recvPerson(int source);
 void MPI_sendStatus(StatusEnum status, int destination);
+void MPI_sendStatus(StatusEnum status, int destination, int tag);
 StatusEnum MPI_recvStatus(int source);
+StatusEnum MPI_recvStatus(int source, int tag);
 void MPI_bcastStatusWorker(StatusEnum status);
+Person MPI_recvWork();
+void MPI_sendWork(Person person);
 
 void MPI_rootProcess();
 void MPI_workerProcess();
@@ -142,7 +147,7 @@ void MPI_rootProcess()
     Person people[ENTRY_CNT_MAX];
     int peopleCount = deserializeJsonFile(JSON_DATA_FILE, people);
     Person processedPeople[ENTRY_CNT_MAX];
-    int pPeopleCount = deserializeJsonFile(JSON_DATA_FILE, people);
+    int pPeopleCount = 0;
 
     // Hold our current status
     StatusEnum dataStatus = clear;
@@ -166,6 +171,27 @@ void MPI_rootProcess()
     logger("Sending halt...", 5);
     MPI::COMM_WORLD.Ssend(&rootStatus, 1, MPI::INT, DATA_PROCESS, statusTag);
     logger("Rooot process sent halt signal to data process", 0);
+
+    logger("Retrieving processed people count...", 3);
+    MPI::COMM_WORLD.Recv(&pPeopleCount, 1, MPI::INT, RESULT_PROCESS, pCountTag);
+    logger("Retrieved processed people count!!!", 3);
+
+    logger("Retrieving people...", 3);
+    for(int i = 0; i < pPeopleCount; i++)
+    {
+        processedPeople[i] = MPI_recvPerson(RESULT_PROCESS);
+    }
+
+    std::cout << Person().InfoHeader();
+    for(int i = 0; i < pPeopleCount; i++)
+    {
+        std::cout << processedPeople[i];
+    }
+    logger("Retrieved " + std::to_string(pPeopleCount) + " people!!!", 3);
+    logger("Should be " + std::to_string(peopleCount) + " people!!!", 3);
+    logger("Saving to file...", 2);
+    saveToFile(RESULT_FILE_NAME, processedPeople, pPeopleCount);
+    logger("Done!!!",2);
 }
 
 // Function to call procedures specific to data process. It reads data and
@@ -205,6 +231,13 @@ void MPI_dataProcess()
             flag = MPI::COMM_WORLD.Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, mpiStatus);
         }
         
+        // // Prevent pointless cycling (console spam)
+        if(peopleCount == DATA_BUFFER && mpiStatus.Get_source() == ROOT_PROCESS)
+        {
+
+            MPI::COMM_WORLD.Probe(MPI_ANY_SOURCE, workStatus, mpiStatus);    
+        }
+
         logger("Data process probe -  process: " + std::to_string(mpiStatus.Get_source()) + " tag: " + std::to_string(mpiStatus.Get_tag()), 3);
         logger("Element count: "  + std::to_string(peopleCount), 3);
 
@@ -258,7 +291,7 @@ void MPI_dataProcess()
             }
 
             logger("Getting ready worker", 5);
-            workerStatus = MPI_recvStatus(mpiStatus.Get_source());
+            workerStatus = MPI_recvStatus(mpiStatus.Get_source(), workStatus);
             MPI_sendPerson(people[--peopleCount], mpiStatus.Get_source());
             logger("Sent data to worker", 5);
         }
@@ -283,7 +316,7 @@ void MPI_workerProcess()
 
     while (true)
     {
-        MPI_sendStatus(workerStatus, DATA_PROCESS);
+        MPI_sendStatus(workerStatus, DATA_PROCESS, workStatus);
         logger("Ready!", 2);
         MPI::COMM_WORLD.Probe(DATA_PROCESS, MPI_ANY_TAG, mpiStatus);
         logger("Message probe, process: " + std::to_string(mpiStatus.Get_source()) + ", tag: " + std::to_string(mpiStatus.Get_tag()), 4);
@@ -292,9 +325,14 @@ void MPI_workerProcess()
         {
             logger("Trying to recieve person...", 5);
             tmpPerson = MPI_recvPerson(DATA_PROCESS);
-            tmpPerson.HahsValue = sha512Function(tmpPerson);
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            count++;
+            // Filter - street number must be less than 3 digits
+            if(tmpPerson.StreetNum / 100.0 < 1.0)
+            {
+                tmpPerson.HahsValue = sha512Function(tmpPerson);
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                MPI_sendWork(tmpPerson);
+                count++;
+            }
         }
         else if (mpiStatus.Get_tag() == statusTag)
         {
@@ -316,7 +354,7 @@ void MPI_workerProcess()
 // to send their finished work and puts into result data structure
 void MPI_resultProcess()
 {
-    Person *outPeople = new Person[ENTRY_CNT_MAX]();
+    Person outPeople[ENTRY_CNT_MAX];
     int peopleCount = 0;
 
     MPI::Status mpiStatus;
@@ -332,7 +370,15 @@ void MPI_resultProcess()
 
         if(mpiStatus.Get_tag() == workTag)
         {
+            Person tmp = MPI_recvWork();
             logger("Recieved work", 2);
+
+            // Sorted insert
+            int i;
+            for (i = peopleCount - 1; (i >= 0 && outPeople[i].Balance > tmp.Balance); i--)
+                outPeople[i + 1] = outPeople[i];
+            outPeople[i + 1] = tmp;
+            peopleCount++;
         } 
         // Recieved halt
         else if (mpiStatus.Get_tag()  == workStatus)
@@ -350,15 +396,17 @@ void MPI_resultProcess()
         }
     }
 
+    // Notify root about element count
+    logger("Notyfing root about result", 3);
+    MPI::COMM_WORLD.Ssend(&peopleCount, 1, MPI::INT, ROOT_PROCESS, pCountTag);
 
-    logger("Result process recieved people count: " + std::to_string(peopleCount), 1);
-
-    // std::cout << "Total count:" << peopleCount << std::endl;
-
-    // std::string jsonStr = Person().Serialize();
-    // std::cout << "Serialized JSON: " << jsonStr << std::endl;
-    // Person tmp(jsonStr);
-    // std::cout << "Desiarilzed JSON: " << tmp << std::endl;
+    // Send all array elements to root
+    logger("Sending results to root", 3);
+    for(int i = 0; i < peopleCount; i++)
+    {
+        MPI_sendPerson(outPeople[i], ROOT_PROCESS);
+    }
+    logger("All sent", 3);
 }
 
 // ===============================================================
@@ -434,7 +482,7 @@ void MPI_sendPerson(Person person, int destination)
 {
     std::string serializedPerson = person.Serialize();
     const char *cStrJson = serializedPerson.c_str(); // Convert to C like litteral string
-    MPI::COMM_WORLD.Send(cStrJson, strlen(cStrJson) + 1, MPI::CHAR, destination, dataTag);
+    MPI::COMM_WORLD.Ssend(cStrJson, strlen(cStrJson) + 1, MPI::CHAR, destination, dataTag);
     logger("Sent person: " + person.Name, 1);
 }
 
@@ -444,6 +492,27 @@ Person MPI_recvPerson(int source)
     const int buffLen = 2048;
     char buff[buffLen];
     MPI::COMM_WORLD.Recv(&buff, buffLen, MPI::CHAR, source, dataTag);
+    std::string jsonStr(buff); // Convert char array back to c++ string
+    Person tmp(jsonStr);
+    logger("Recived person: " + tmp.Name, 1);
+    return tmp;
+}
+
+// Sends processed worker
+void MPI_sendWork(Person person)
+{
+    std::string serializedPerson = person.Serialize();
+    const char *cStrJson = serializedPerson.c_str(); // Convert to C like litteral string
+    MPI::COMM_WORLD.Ssend(cStrJson, strlen(cStrJson) + 1, MPI::CHAR, RESULT_PROCESS, workTag);
+    logger("Sent person: " + person.Name, 1);
+}
+
+// Recieves processed person from workers
+Person MPI_recvWork()
+{
+    const int buffLen = 2048;
+    char buff[buffLen];
+    MPI::COMM_WORLD.Recv(&buff, buffLen, MPI::CHAR, MPI_ANY_SOURCE, workTag);
     std::string jsonStr(buff); // Convert char array back to c++ string
     Person tmp(jsonStr);
     logger("Recived person: " + tmp.Name, 1);
@@ -460,11 +529,33 @@ void MPI_sendStatus(StatusEnum status, int destination)
     logger(ss.str(), 5);
 }
 
+// Send status byte
+void MPI_sendStatus(StatusEnum status, int destination, int tag)
+{
+    MPI::COMM_WORLD.Send(&status, 1, MPI::INT, destination, tag);
+    std::bitset<8> bits(status);
+    std::ostringstream ss;
+    ss << "Sent status byte: " << bits;
+    logger(ss.str(), 5);
+}
+
 // Recieves status byte
 StatusEnum MPI_recvStatus(int source)
 {
     StatusEnum status = clear;
     MPI::COMM_WORLD.Recv(&status, 1, MPI::INT, source, statusTag);
+    std::bitset<8> bits(status);
+    std::ostringstream ss;
+    ss << "Recieved status byte: " << bits;
+    logger(ss.str(), 5);
+    return status;
+}
+
+// Recieves status byte
+StatusEnum MPI_recvStatus(int source, int tag)
+{
+    StatusEnum status = clear;
+    MPI::COMM_WORLD.Recv(&status, 1, MPI::INT, source, tag);
     std::bitset<8> bits(status);
     std::ostringstream ss;
     ss << "Recieved status byte: " << bits;
@@ -506,7 +597,7 @@ StatusEnum fillStatusFlags(int count, int maxCount)
 // Time heavy function which emulates in intensive task
 std::string sha512Function(Person p)
 {
-    int iterationCount = 1; // Hom many times to has
+    int iterationCount = 5000; // Hom many times to has
     std::string output = sha512(p.Name + std::to_string(p.StreetNum) + std::to_string(p.Balance));
     for (int i = 0; i < iterationCount; i++)
     {
@@ -515,24 +606,6 @@ std::string sha512Function(Person p)
     return output;
 }
 
-int saveResToVec(Person outPeople[], Person person)
-{
-    int extCount;
-    // Filter: street number is 3 digit or more
-    if (person.StreetNum / 100 < 1.0)
-    {
-        return extCount;
-    }
-
-    // Sorted insert
-    int i;
-    for (i = extCount - 1; (i >= 0 && outPeople[i].Balance > person.Balance); i--)
-        outPeople[i + 1] = outPeople[i];
-
-    outPeople[i + 1] = person;
-
-    return (++extCount);
-}
 
 // Get duration in second to show how long program is running
 double programTime()

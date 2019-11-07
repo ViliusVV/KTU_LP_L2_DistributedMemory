@@ -155,17 +155,14 @@ void MPI_rootProcess()
     MPI_Status mpiStatus;
 
     for (int p = 0; p < peopleCount; p++)
-    {   // Block until root recieves status message from data thread
-        logger("Root waiting for status...", 5);
-        dataStatus = MPI_recvStatus(DATA_PROCESS);
-
+    {   
+        // Block until root recieves status message from data thread
         logger("Root sending person", 5);
         MPI_sendPerson(people[p], DATA_PROCESS);
     }
     logger("All people sent by root", 4);
 
-    // Discart last status message from data process, to unblock
-    MPI::COMM_WORLD.Recv(&dataStatus, 1, MPI::INT, DATA_PROCESS, statusTag);
+   
 
     rootStatus = makeItStop;
     logger("Sending halt...", 5);
@@ -188,7 +185,7 @@ void MPI_rootProcess()
         std::cout << processedPeople[i];
     }
     logger("Retrieved " + std::to_string(pPeopleCount) + " people!!!", 3);
-    logger("Should be " + std::to_string(peopleCount) + " people!!!", 3);
+    logger("Total unfiltered was  " + std::to_string(peopleCount) + " people!!!", 3);
     logger("Saving to file...", 2);
     saveToFile(RESULT_FILE_NAME, processedPeople, pPeopleCount);
     logger("Done!!!",2);
@@ -207,84 +204,64 @@ void MPI_dataProcess()
     StatusEnum rootStatus = clear;
     StatusEnum workerStatus = clear;
     MPI::Status mpiStatus;
-    bool finished = false;
     bool haltFlag = false;
-    bool canRecieve = true;
 
     // Do until it has work
     while (true)
     {
-        // Get current state of array
-        status = fillStatusFlags(peopleCount, DATA_BUFFER);
-        //logger("Current status byte: " + statusToStr(status), 5);
 
-        // Send notification for root that we can recieve data
-        if(canRecieve && peopleCount < DATA_BUFFER - 1 )
+        // If full recieve only from workers
+        if(peopleCount == DATA_BUFFER)
         {
-            logger("Sending status to ROOT",3);
-            MPI_sendStatus(status, ROOT_PROCESS);
-        }
-        // Find out which proces wants to send message of some type
-        bool flag = MPI::COMM_WORLD.Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, mpiStatus);
-        while (!flag)
-        {
-            flag = MPI::COMM_WORLD.Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, mpiStatus);
-        }
-        
-        // // Prevent pointless cycling (console spam)
-        if(peopleCount == DATA_BUFFER && mpiStatus.Get_source() == ROOT_PROCESS)
-        {
-
             MPI::COMM_WORLD.Probe(MPI_ANY_SOURCE, workStatus, mpiStatus);    
+        }
+        else{
+            // Find out which proces wants to send message of some type
+            MPI::COMM_WORLD.Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, mpiStatus);
         }
 
         logger("Data process probe -  process: " + std::to_string(mpiStatus.Get_source()) + " tag: " + std::to_string(mpiStatus.Get_tag()), 3);
         logger("Element count: "  + std::to_string(peopleCount), 3);
 
-
-        // Check if root send halt signal
-        bool flg = MPI::COMM_WORLD.Iprobe(ROOT_PROCESS, statusTag);
-        if (flg)
-        {
-            logger("Root send halt, reciving it...", 1);
-            rootStatus = MPI_recvStatus(ROOT_PROCESS);
-            haltFlag = true;
-            canRecieve = false;
-            logger("Halt recivied...", 1);
-        }
         
-        // If array is empty we need to wait for root
-        if (peopleCount == 0 && !haltFlag)
+        
+        // If array is empty we need to wait for root append or wait for halt
+        if (    (peopleCount == 0 && !haltFlag) ||
+                (mpiStatus.Get_tag() == statusTag && mpiStatus.Get_source() == ROOT_PROCESS))    
         {   
             logger("Empty array, waiting root to append...", 1);
-            bool flg = MPI::COMM_WORLD.Iprobe(ROOT_PROCESS, statusTag);
-            if (flg)
+            MPI::COMM_WORLD.Probe(ROOT_PROCESS, MPI_ANY_TAG, mpiStatus);
+
+            // Halt
+            if(mpiStatus.Get_tag() == statusTag)
             {
                 logger("Root send halt, reciving it...", 1);
                 rootStatus = MPI_recvStatus(ROOT_PROCESS);
                 haltFlag = true;
-                canRecieve = false;
                 logger("Halt recivied...", 1);
-                break;
             }
-            people[peopleCount++] = MPI_recvPerson(ROOT_PROCESS);
+            //Data
+            else{
+                people[peopleCount++] = MPI_recvPerson(ROOT_PROCESS);
+            }
             continue;
         }
+
+
         // When message is from root
-        else if (mpiStatus.Get_source() == ROOT_PROCESS)
+        if (mpiStatus.Get_source() == ROOT_PROCESS)
         {
             logger("Message is from root", 5);
-            if (mpiStatus.Get_tag() == dataTag && peopleCount != DATA_BUFFER)
-            {
-                logger("Sending person", 5);
-                Person tmp = MPI_recvPerson(ROOT_PROCESS);
-                people[peopleCount++] = tmp;
-            }
+            logger("Sending person", 5);
+            Person tmp = MPI_recvPerson(ROOT_PROCESS);
+            people[peopleCount++] = tmp;
+
         }
         // When message is from worker
         else
         {
             logger("Message is from worker", 5);
+            // We recieved message but we dont have data
             if (haltFlag && peopleCount == 0)
             {
                 break;
@@ -316,8 +293,11 @@ void MPI_workerProcess()
 
     while (true)
     {
+        // Worker ready
         MPI_sendStatus(workerStatus, DATA_PROCESS, workStatus);
         logger("Ready!", 2);
+
+        // Wait for data process response
         MPI::COMM_WORLD.Probe(DATA_PROCESS, MPI_ANY_TAG, mpiStatus);
         logger("Message probe, process: " + std::to_string(mpiStatus.Get_source()) + ", tag: " + std::to_string(mpiStatus.Get_tag()), 4);
 
@@ -329,7 +309,7 @@ void MPI_workerProcess()
             if(tmpPerson.StreetNum / 100.0 < 1.0)
             {
                 tmpPerson.HahsValue = sha512Function(tmpPerson);
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                //std::this_threelseelsead::sleep_for(std::chrono::milliseconds(500));
                 MPI_sendWork(tmpPerson);
                 count++;
             }
@@ -597,7 +577,7 @@ StatusEnum fillStatusFlags(int count, int maxCount)
 // Time heavy function which emulates in intensive task
 std::string sha512Function(Person p)
 {
-    int iterationCount = 5000; // Hom many times to has
+    int iterationCount = 50000; // Hom many times to has
     std::string output = sha512(p.Name + std::to_string(p.StreetNum) + std::to_string(p.Balance));
     for (int i = 0; i < iterationCount; i++)
     {

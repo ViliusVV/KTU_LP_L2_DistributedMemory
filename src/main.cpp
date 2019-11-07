@@ -150,9 +150,8 @@ void MPI_rootProcess()
     int pPeopleCount = 0;
 
     // Hold our current status
-    StatusEnum dataStatus = clear;
     StatusEnum rootStatus = clear;
-    MPI_Status mpiStatus;
+    
 
     for (int p = 0; p < peopleCount; p++)
     {   
@@ -255,7 +254,6 @@ void MPI_dataProcess()
             logger("Sending person", 5);
             Person tmp = MPI_recvPerson(ROOT_PROCESS);
             people[peopleCount++] = tmp;
-
         }
         // When message is from worker
         else
